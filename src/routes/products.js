@@ -1,21 +1,24 @@
 const express = require("express");
 let router = express.Router();
-let products = require("../db/all-products.json");
+let productsDatabase = require("../db/all-products.json");
 
-router.get("/*", (req, res) => {
+router.get("/", (req, res) => {
   if (req.url === "/") {
     res.setHeader("Content-Type", "application/json");
-    res.send(products);
+    res.send(productsDatabase);
     res.end();
     return;
   }
 
-  if (req.url.includes("?")) {
+  if (
+    req.query.ids.split(",").length < productsDatabase.length &&
+    req.url.includes("ids")
+  ) {
     let productsArr = [];
     const productsIdsArr = req.query.ids.split(",");
 
     productsIdsArr.map(item => {
-      const getProductById = products.find(
+      const getProductById = productsDatabase.find(
         element => element.id === Number(item)
       );
       if (getProductById) {
@@ -44,25 +47,6 @@ router.get("/*", (req, res) => {
     res.send(foundedProducts);
     res.end();
     return;
-  }
-
-  let oneProductId = req.url.slice(req.url.lastIndexOf("/") + 1);
-  const getOneProductById = products.find(
-    item => item.id.toString() === oneProductId
-  );
-  if (getOneProductById) {
-    res.setHeader("Content-Type", "application/json");
-    res.send(getOneProductById);
-    res.end();
-  } else {
-    res.setHeader("Content-Type", "application/json");
-    res.send(
-      JSON.stringify({
-        status: "no products",
-        products: []
-      })
-    );
-    res.end();
   }
 });
 

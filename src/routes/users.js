@@ -4,6 +4,8 @@ let router = express.Router();
 const path = require("path");
 const fs = require("fs");
 
+const bodyParser = require("body-parser");
+
 // const uuid = require("uuid/v4");
 const shortid = require("shortid");
 let usersDataBase = require("../db/all-users.json");
@@ -48,8 +50,8 @@ const saveUser = user => {
       let users = JSON.parse(data);
       user.id = shortid.generate();
       users.push(user);
-      usersToJson = JSON.stringify(users);
-      fs.writeFile(usersDataBasePath, usersToJson, "utf-8", err => {
+      usersResult = JSON.stringify(users);
+      fs.writeFile(usersDataBasePath, usersResult, "utf-8", err => {
         if (err) {
           return console.log(err);
         }
@@ -65,38 +67,42 @@ const saveUser = user => {
 };
 
 router.post("/*", (req, res) => {
-  let body = "";
+  // let body = "";
 
-  req.on("data", data => {
-    body = body + data;
-    console.log("Incoming data!");
-  });
+  // req.on("data", data => {
+  //   body = body + data;
+  //   console.log("Incoming data!");
+  // });
 
-  req.on("end", () => {
-    const userToCheckAndSave = JSON.parse(body);
+  // req.on("end", () => {
 
-    if (checkUser(userToCheckAndSave)) {
-      console.log("Validation: success.");
-      saveUser(userToCheckAndSave);
-      res.setHeader("Content-Type", "application/json");
-      res.send(JSON.stringify({ status: "success", user: userToCheckAndSave }));
-      res.end();
-    } else {
-      console.log("Validation: error.");
-      res.setHeader("Content-Type", "application/json");
-      res.send(JSON.stringify({ status: "Error! Check type of input value!" }));
-      res.end();
-    }
-  });
+  // });
+
+  const userToCheckAndSave = req.body;
+
+  if (checkUser(userToCheckAndSave)) {
+    console.log("Validation: success.");
+    saveUser(userToCheckAndSave);
+    res.setHeader("Content-Type", "application/json");
+    res.send(JSON.stringify({ status: "success", user: userToCheckAndSave }));
+    res.end();
+  } else {
+    console.log("Validation: error.");
+    res.setHeader("Content-Type", "application/json");
+    res.send(JSON.stringify({ status: "Error! Check type of input value!" }));
+    res.end();
+  }
 });
 
-router.get("/*", (req, res) => {
+router.get("/", (req, res) => {
+  console.log("object :", req);
   let userId = req.url.slice(req.url.lastIndexOf("/") + 1);
-  const getUserById = usersDataBase.find(user => user.id.toString() === userId);
+  const userById = usersDataBase.find(user => user.id.toString() === userId);
+  console.log("userId :", userId);
 
-  if (getUserById) {
+  if (userById) {
     res.setHeader("Content-Type", "application/json");
-    res.send(getUserById);
+    res.send(userById);
     res.end();
   } else {
     res.setHeader("Content-Type", "application/json");

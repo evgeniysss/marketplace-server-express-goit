@@ -5,8 +5,25 @@ const fs = require("fs");
 const path = require("path");
 const shortid = require("shortid");
 
+const bodyParser = require("body-parser");
+
 let productsDataBase = require("../db/all-products.json");
 let usersDataBase = require("../db/all-users.json");
+
+const checkOrder = orderToCheck => {
+  const user = orderToCheck.user;
+  const products = orderToCheck.products;
+  const deliveryType = orderToCheck.deliveryType;
+  const deliveryAdress = orderToCheck.deliveryAdress;
+  if (
+    typeof user === "string" &&
+    typeof products === "object" &&
+    typeof deliveryType === "string" &&
+    typeof deliveryAdress === "string"
+  )
+    return true;
+  else return false;
+};
 
 const getProducts = productsOrder => {
   const productsOrderIds = productsOrder.products;
@@ -66,20 +83,16 @@ const makeOrderDir = order => {
   });
 };
 
-router.post("/*", (req, res) => {
-  let body = "";
+router.post("/", (req, res) => {
+  const orderList = req.body;
+  // console.log("orderList :", orderList);
+  orderList.id = shortid.generate();
 
-  req.on("data", data => {
-    body = body + data;
-    console.log("Incoming order data!");
-  });
-
-  req.on("end", () => {
-    const orderList = JSON.parse(body);
+  if (checkOrder(orderList)) {
+    console.log("Show!!!");
     const foundedProd = getProducts(orderList);
-    orderList.id = shortid.generate();
 
-    if (foundedProd.length !== 0) {
+    if (foundedProd.length === orderList.products.length) {
       makeOrderDir(orderList);
       res.setHeader("Content-Type", "application/json");
       res.send(JSON.stringify({ status: "success", order: orderList }));
@@ -89,7 +102,16 @@ router.post("/*", (req, res) => {
       res.send(JSON.stringify({ status: "failed", order: null }));
       res.end();
     }
-  });
+  } else {
+    res.setHeader("Content-Type", "application/json");
+    res.send(
+      JSON.stringify({
+        status: "failed, you must enter correct type of data",
+        order: null
+      })
+    );
+    res.end();
+  }
 });
 
 module.exports = router;
